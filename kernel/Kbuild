@@ -1,0 +1,2 @@
+# Kbuild placeholder: the observation-only KMD (K0) lands in a later stage.
+# No module target yet; this file fixes the kernel/ layout from day one.
