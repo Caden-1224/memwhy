@@ -199,6 +199,7 @@ memwhy diff    report1.json report2.json
 .
 ├── CMakeLists.txt
 ├── src/                  # CLI、模型与报告实现
+├── tests/                # CTest 测试程序（轨迹格式等）
 ├── kernel/               # KMD 观测设施（Kbuild 占位，K0 起实现）
 │   └── LICENSE           # GPL-2.0-only
 ├── .github/workflows/    # CI

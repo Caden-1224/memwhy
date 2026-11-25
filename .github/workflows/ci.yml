@@ -1,17 +1,15 @@
-name: ci
-
-on:
-  push:
-  pull_request:
-
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
-      - name: Build
-        run: cmake --build build -j
-      - name: Test
-        run: ctest --test-dir build --output-on-failure
+name: ci  # 工作流名称，GitHub Actions 界面显示为 "ci"。
+on:  # 定义触发条件。
+  push:  # 任何分支 push 时触发。
+  pull_request:  # 任何 PR 提交或更新时触发。
+jobs:  # 所有任务的定义从这里开始。
+  build:  # 唯一的构建任务。
+    runs-on: ubuntu-latest  # 使用 GitHub 托管的最新 Ubuntu 运行器。
+    steps:  # 任务按顺序执行的步骤列表。
+      - uses: actions/checkout@v5  # 把仓库代码检出到工作目录。
+      - name: Configure  # 步骤名：配置 CMake。
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release  # 生成 Release 构建目录。
+      - name: Build  # 步骤名：编译。
+        run: cmake --build build -j  # 并行编译所有目标。
+      - name: Test  # 步骤名：运行测试。
+        run: ctest --test-dir build --output-on-failure  # 运行全部 CTest 测试，失败时打印日志。
