@@ -43,6 +43,7 @@ class TraceReader {
 public:
     explicit TraceReader(const std::string& path);  // 打开并校验整个文件；任何损坏都抛 std::runtime_error 且说明原因。
     bool next(TraceRecord& record);                 // 取下一条记录；读完后返回 false，且不修改 record。
+    std::size_t record_count() const;  // 返回校验通过后的记录总数；Bundle 用它推导默认测量窗口。
 
 private:
     std::vector<TraceRecord> records_;  // 校验通过后的全部记录，按文件顺序保存。

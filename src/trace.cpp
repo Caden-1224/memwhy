@@ -215,6 +215,10 @@ TraceReader::TraceReader(const std::string& path) {  // 构造：一次读入整
     }
 }
 
+std::size_t TraceReader::record_count() const {  // 返回记录总数。
+    return records_.size();  // vector 长度就是文件头声明的记录数（构造时已严格校验）。
+}
+
 bool TraceReader::next(TraceRecord& record) {  // 顺序取下一条记录。
     if (index_ >= records_.size()) {  // 下标越界说明已经读完。
         return false;  // 返回 false 表示没有更多记录。
