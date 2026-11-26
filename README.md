@@ -25,7 +25,7 @@ MemWhy 是一个面向 SoC 驱动层性能问题的访存路径建模工具。�
 
 项目以合成轨迹为主输入，把请求沿「请求—队列—翻译—完成」路径建模；模型外推与板端实测在报告中双栏分列，永不混写。解析解锚点、守恒校验与固定种子 Bundle 回放共同保证结论可复现、可验证。
 
-> 当前已完成构建系统、CLI 入口、轨迹 v1 格式与 Bundle 打包/校验；模型与板端观测能力将逐步落地。
+> 当前已完成构建系统、CLI 入口、轨迹 v1 格式、依赖指针链生成器与 Bundle 打包/校验；模型与板端观测能力将逐步落地。
 
 ## 核心概念
 
@@ -133,7 +133,13 @@ ctest --test-dir build --output-on-failure
 ```sh
 ./build/memwhy --version
 # memwhy 0.1.0
+
+./build/memwhy gen --kind chain --seed 42 --out trace.bin \
+  --working-set 4096 --chain-len 10000 --node-size 64 --base 0 --core 0
+# generated chain: 10000 records, 64 distinct nodes
 ```
+
+依赖指针链按单环随机排列构造：工作集被切成 N = working-set / node-size 个节点，每个节点恰好有一个前驱和一个后继。`chain-len < N` 时只触达前 `chain-len` 个不同节点（stdout 会报告实际触达数，不宣称扫了全工作集）；`chain-len > N` 时沿单环循环，触达节点数仍为 N。
 
 ## CLI 设计
 
@@ -149,7 +155,7 @@ memwhy diff    report1.json report2.json
 
 | 子命令 | 作用 | 状态 |
 |---|---|---|
-| `gen` | 生成指针链、矩阵遍历或 stride 扫描轨迹 | 规划中 |
+| `gen` | 生成指针链、矩阵遍历或 stride 扫描轨迹 | 已实现（chain；matrix/stride 规划中） |
 | `bundle pack` | 打包轨迹、配置与 manifest，计算 SHA-256，原子重命名 | 已实现 |
 | `bundle verify` | 校验 Bundle 成员哈希与 manifest | 已实现 |
 | `replay` | 回放 Bundle 并生成双栏 JSON 报告 | 规划中 |

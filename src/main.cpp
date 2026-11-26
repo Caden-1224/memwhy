@@ -1,6 +1,8 @@
 // src/main.cpp — memwhy 命令行入口。
-// 当前支持 --version 与 bundle pack/verify 两组命令；后续子命令沿用同一套参数解析方式扩展。
+// 当前支持 --version、gen 与 bundle pack/verify 三组命令；后续子命令沿用同一套参数解析方式扩展。
 #include "bundle.hpp"  // 引入 Bundle 打包与校验接口。
+#include "cli.hpp"     // 引入共享的命令行参数解析工具。
+#include "gen.hpp"     // 引入 gen 子命令入口。
 
 #include <cstdint>    // 引入 std::uint64_t，保存解析出的记录数。
 #include <cstdio>     // 提供 std::printf/std::fprintf，向标准输出或错误打印文本。
@@ -11,39 +13,17 @@
 
 namespace {  // 匿名命名空间：命令行辅助函数只在 main.cpp 内可见。
 
+using memwhy::cli::next_value;  // 复用共享的“取下一个参数值”函数。
+using memwhy::cli::parse_u64;   // 复用共享的 64 位非负整数解析函数。
+
 // print_usage：打印当前支持的命令行用法；错误路径统一调用它。
 void print_usage() {  // 无参数，只负责输出。
     std::fprintf(stderr,  // 用法信息写到标准错误，方便脚本区分正常输出与错误。
                  "usage: memwhy [--version]\n"  // 版本查询用法。
+                 "%s"  // 轨迹生成用法由 gen 模块统一提供。
                  "       memwhy bundle pack --trace PATH --config PATH --out DIR [--env PATH] [--warmup N] [--measure-start N] [--measure-count M]\n"  // 打包用法。
-                 "       memwhy bundle verify --bundle DIR\n");  // 校验用法。
-}
-
-// next_value：取出当前选项后面紧跟的参数值；缺失时抛出用法错误。
-const char* next_value(int argc, char** argv, int& index) {  // index 是当前选项下标，会被前移到值的位置。
-    if (index + 1 >= argc) {  // 后面没有参数说明用户漏写值。
-        throw std::runtime_error(std::string("missing value for ") + argv[index]);  // 报告缺少哪个选项的值。
-    }
-    ++index;  // 下标前移到值参数。
-    return argv[index];  // 返回值字符串。
-}
-
-// parse_u64：把命令行字符串解析为非负 64 位整数；拒绝负号、尾随字符与溢出。
-std::uint64_t parse_u64(const char* value, const char* option) {  // value 是待解析文本，option 用于报错定位。
-    const std::string text(value);  // 复制成 std::string，便于检查长度。
-    if (text.empty() || text.front() < '0' || text.front() > '9') {  // 只接受数字开头，显式拒绝负号、正号与空串。
-        throw std::runtime_error(std::string("invalid integer for ") + option + ": " + text);  // 报告非法整数。
-    }
-    try {  // std::stoull 在非法输入或溢出时抛异常。
-        std::size_t used = 0;  // 记录 stoull 实际消费的字符数。
-        const unsigned long long parsed = std::stoull(text, &used, 10);  // 按十进制解析无符号长整数。
-        if (used != text.size()) {  // 还有剩余字符说明不是纯数字。
-            throw std::invalid_argument("trailing characters");  // 主动抛错进入统一处理。
-        }
-        return static_cast<std::uint64_t>(parsed);  // 转成固定宽度 64 位整数。
-    } catch (const std::exception&) {  // 捕获解析失败与手动抛出的异常。
-        throw std::runtime_error(std::string("invalid integer for ") + option + ": " + text);  // 统一报告哪个选项的哪个值非法。
-    }
+                 "       memwhy bundle verify --bundle DIR\n",  // 校验用法。
+                 memwhy::kGenUsageLine);  // 传入唯一的 gen 用法文本。
 }
 
 // run_bundle_pack：解析并执行 `memwhy bundle pack ...`。
@@ -120,6 +100,9 @@ int main(int argc, char** argv) {  // main 是程序入口；argc 是参数个�
         if (argc == 2 && std::strcmp(argv[1], "--version") == 0) {  // 查询版本。
             std::printf("memwhy %s\n", MEMWHY_VERSION);  // 打印程序名与 CMake 注入的版本号。
             return 0;  // 成功退出码。
+        }
+        if (argc >= 2 && std::strcmp(argv[1], "gen") == 0) {  // gen 子命令。
+            return memwhy::run_gen(argc, argv);  // 分发到生成器入口。
         }
         if (argc >= 2 && std::strcmp(argv[1], "bundle") == 0) {  // bundle 子命令族。
             return run_bundle(argc, argv);  // 分发到具体子命令。
